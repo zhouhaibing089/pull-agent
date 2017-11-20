@@ -48,7 +48,7 @@ func (p *Proxy) HandlerFunc(writer http.ResponseWriter, req *http.Request) {
 	}
 	// see whether there is currently a node is downloading this layer
 	nodes := p.cluster.Endpoints(path)
-	if len(nodes) >= 5 {
+	if len(nodes) >= 1 {
 		// select one randomly to balance load
 		node := nodes[rand.Intn(len(nodes))]
 		url := fmt.Sprintf("http://%s:%d/%s?relay=true", node, p.port, path)
