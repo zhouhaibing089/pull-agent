@@ -6,6 +6,7 @@ import (
 	"log"
 	"math/rand"
 	"net/http"
+	"net/url"
 	"os"
 
 	"github.com/zhouhaibing089/pull-agent/pkg/cluster"
@@ -59,6 +60,12 @@ func (p *Proxy) HandlerFunc(writer http.ResponseWriter, req *http.Request) {
 	// download directly from source
 	source := req.URL.Query().Get("source")
 	if source != "" {
+		source, err := url.QueryUnescape(source)
+		if err != nil {
+			log.Printf("failed to unescape source query param: %s", err)
+			writer.WriteHeader(http.StatusInternalServerError)
+			return
+		}
 		p.copyFromURL(writer, path, source)
 		return
 	}
