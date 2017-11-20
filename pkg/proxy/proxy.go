@@ -43,7 +43,7 @@ func (p *Proxy) HandlerFunc(writer http.ResponseWriter, req *http.Request) {
 	path := req.URL.Path
 	relay := req.URL.Query().Get("relay")
 	if relay != "" {
-		p.copyFromFile(writer, fmt.Sprintf("%s/%s", p.localDir, path))
+		p.copyFromFile(writer, path)
 		return
 	}
 	// see whether there is currently a node is downloading this layer
