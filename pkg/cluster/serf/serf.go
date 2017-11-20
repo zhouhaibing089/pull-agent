@@ -73,6 +73,7 @@ func New(peer string) (cluster.Interface, error) {
 		eventCh:  eventCh,
 		agent:    agent,
 		peer:     peer,
+		address:  address,
 		byDigest: make(map[string][]string),
 	}, nil
 }
