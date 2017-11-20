@@ -113,19 +113,20 @@ func (p *Proxy) copyFromFile(writer http.ResponseWriter, path string, length int
 	// copy the file to writer
 	var offset int64
 	var buffer = make([]byte, 50*1024*1024)
-	for offset < length {
+	for offset != (length - 1) {
 		n, err := file.ReadAt(buffer, offset)
-		writer.Write(buffer)
-		offset += int64(n)
 		if err != nil && err == io.EOF {
 			if offset < length {
 				time.Sleep(300 * time.Millisecond)
-				continue
 			}
-		}
-		if err != nil {
+		} else if err != nil {
 			log.Printf("failed to read from file: %s", err)
 		}
+		n, err = writer.Write(buffer)
+		if err != nil {
+			log.Printf("failed to write: %s", err)
+		}
+		offset += int64(n)
 	}
 }
 
