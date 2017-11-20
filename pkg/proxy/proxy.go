@@ -52,6 +52,7 @@ func (p *Proxy) HandlerFunc(writer http.ResponseWriter, req *http.Request) {
 		writer.WriteHeader(http.StatusBadRequest)
 		return
 	}
+	writer.Header().Set("Content-Length", qsLen)
 
 	// if relay is specified.
 	relay := req.URL.Query().Get("relay")
