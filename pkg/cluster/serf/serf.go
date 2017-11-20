@@ -153,9 +153,11 @@ func (s *serf) Serve() error {
 			}
 			// update the memory state accordingly.
 			if layerEvent.Status == StatusStarted {
+				log.Printf("add layer %s from %s", layerEvent.Digest, layerEvent.Address)
 				s.addNode(layerEvent.Digest, layerEvent.Address)
 			}
 			if layerEvent.Status == StatusEnded {
+				log.Printf("remove layer %s from %s", layerEvent.Digest, layerEvent.Address)
 				s.delNode(layerEvent.Digest, layerEvent.Address)
 			}
 		}
