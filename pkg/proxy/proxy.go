@@ -122,7 +122,7 @@ func (p *Proxy) copyFromFile(writer http.ResponseWriter, path string, length int
 		} else if err != nil {
 			log.Printf("failed to read from file: %s", err)
 		}
-		n, err = writer.Write(buffer)
+		n, err = writer.Write(buffer[0:n])
 		if err != nil {
 			log.Printf("failed to write: %s", err)
 		}
