@@ -8,6 +8,8 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"strconv"
+	"time"
 
 	"github.com/zhouhaibing089/pull-agent/pkg/cluster"
 )
@@ -42,17 +44,28 @@ func (p *Proxy) ListenAndServe() error {
 // HandlerFunc is the http handler.
 func (p *Proxy) HandlerFunc(writer http.ResponseWriter, req *http.Request) {
 	path := req.URL.Path
-	relay := req.URL.Query().Get("relay")
-	if relay != "" {
-		p.copyFromFile(writer, path)
+
+	// len is a required parameter.
+	qsLen := req.URL.Query().Get("len")
+	length, err := strconv.ParseInt(qsLen, 10, 64)
+	if err != nil {
+		writer.WriteHeader(http.StatusBadRequest)
 		return
 	}
+
+	// if relay is specified.
+	relay := req.URL.Query().Get("relay")
+	if relay != "" {
+		p.copyFromFile(writer, path, length)
+		return
+	}
+
 	// see whether there is currently a node is downloading this layer
 	nodes := p.cluster.Endpoints(path)
 	if len(nodes) >= 1 {
 		// select one randomly to balance load
 		node := nodes[rand.Intn(len(nodes))]
-		url := fmt.Sprintf("http://%s:%d%s?relay=true", node, p.port, path)
+		url := fmt.Sprintf("http://%s:%d%s?relay=true&len=%d", node, p.port, path, length)
 		p.copyFromURL(writer, path, url)
 		return
 	}
@@ -78,13 +91,14 @@ type fileWriter struct {
 	Writer io.Writer
 }
 
+// Write implements the io.Writer interface.
 func (fw *fileWriter) Write(data []byte) (int, error) {
 	fw.File.Write(data)
 	return fw.Writer.Write(data)
 }
 
 // copyFromFile copies the data from file to writer.
-func (p *Proxy) copyFromFile(writer http.ResponseWriter, path string) {
+func (p *Proxy) copyFromFile(writer http.ResponseWriter, path string, length int64) {
 	log.Printf("copy from file for %s", path)
 
 	filePath := fmt.Sprintf("%s%s", p.localDir, path)
@@ -96,9 +110,21 @@ func (p *Proxy) copyFromFile(writer http.ResponseWriter, path string) {
 	}
 	defer file.Close()
 	// copy the file to writer
-	_, err = io.CopyBuffer(writer, file, make([]byte, 100*1024*1024))
-	if err != nil {
-		log.Printf("failed to copy from file %q: %s", filePath, err)
+	var offset int64
+	var buffer = make([]byte, 50*1024*1024)
+	for offset < length {
+		n, err := file.ReadAt(buffer, offset)
+		writer.Write(buffer)
+		offset += int64(n)
+		if err != nil && err == io.EOF {
+			if offset < length {
+				time.Sleep(300 * time.Millisecond)
+				continue
+			}
+		}
+		if err != nil {
+			log.Printf("failed to read from file: %s", err)
+		}
 	}
 }
 
