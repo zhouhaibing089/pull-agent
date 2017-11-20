@@ -52,7 +52,7 @@ func (p *Proxy) HandlerFunc(writer http.ResponseWriter, req *http.Request) {
 	if len(nodes) >= 1 {
 		// select one randomly to balance load
 		node := nodes[rand.Intn(len(nodes))]
-		url := fmt.Sprintf("http://%s:%d/%s?relay=true", node, p.port, path)
+		url := fmt.Sprintf("http://%s:%d%s?relay=true", node, p.port, path)
 		p.copyFromURL(writer, path, url)
 		return
 	}
